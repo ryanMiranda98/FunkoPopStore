@@ -6,7 +6,7 @@
   "scripts": {
     "prod": "cross-env NODE_ENV=production npm index",
     "dev": "cross-env NODE_ENV=development nodemon index",
-    "test": "cross-env NODE_ENV=test npm test"
+    "test": "cross-env NODE_ENV=test jest --watch --verbose"
   },
   "author": "Ryan Miranda",
   "license": "ISC",
