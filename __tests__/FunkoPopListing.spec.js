@@ -14,7 +14,7 @@ beforeAll(async () => {
 
 const addPopsToDB = async (length = 5) => {
   for (let i = 0; i < length; i++) {
-    funkopops = await FunkoPops.create(dummyData[i]);
+    await FunkoPops.create(dummyData[i]);
   }
 };
 
@@ -59,7 +59,7 @@ describe("Funko pops listing", () => {
     expect(response.body.size).toBe(5);
   });
 
-  it("should return 200 OK for requested funk pop", async () => {
+  it("should return 200 OK for requested funko pop", async () => {
     await addPopsToDB(5);
     const pops = await getAllPops();
 
@@ -102,7 +102,7 @@ describe("Funko pops listing", () => {
     expect(response.status).toBe(404);
   });
 
-  it("should return Funko Pop with Invalid Id messageif requested funko pop has invalid id (CAST Error)", async () => {
+  it("should return Funko Pop with Invalid Id message if requested funko pop has invalid id (CAST Error)", async () => {
     const popID = "61503ae7f4a6bb9a218";
     const response = await request.get(`/api/1.0/funkopops/${popID}`);
     expect(response.body.message).toBe(

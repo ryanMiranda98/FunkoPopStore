@@ -17,7 +17,9 @@ const FunkoPopSchema = new mongoose.Schema({
     trim: true
   },
   quantity: { type: Number, required: true },
-  instock: { type: Boolean, default: true, required: true }
+  instock: { type: Boolean, default: true, required: true },
+  // coverImage: { type: String }
+  // images: [{ type: String }]
 });
 
 module.exports = mongoose.model("FunkoPops", FunkoPopSchema);

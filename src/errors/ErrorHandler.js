@@ -1,17 +1,22 @@
 module.exports = (err, req, res, next) => {
-  const { status, message } = err;
+  let validationErrors = {};
+  let { status, message, errors } = err;
 
-  if (err.name === "CastError") {
-    return res.status(404).json({
-      path: req.originalPath,
-      timestamp: new Date().getTime(),
-      message: "Sorry! Could not find any funko pops with that ID"
+  if (errors) {
+    errors.array().forEach((error) => {
+      validationErrors[error.param] = error.msg;
     });
   }
 
+  if (err.name === "CastError") {
+    status = 404;
+    message = "Sorry! Could not find any funko pops with that ID";
+  }
+
   return res.status(status).json({
-    path: req.originalPath,
+    path: req.originalUrl,
     timestamp: new Date().getTime(),
-    message: message
+    message: message,
+    validationErrors
   });
 };
