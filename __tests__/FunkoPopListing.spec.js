@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const config = require("config");
 const app = require("../src/app");
 const FunkoPops = require("../src/models/FunkPop");
-const dummyData = require("../dummy.json");
+const dummyData = require("../data/dummy.js");
 
 const request = supertest(app);
 const dbConfig = config.get("database");
