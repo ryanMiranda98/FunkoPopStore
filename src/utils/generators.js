@@ -2,9 +2,11 @@ const config = require("config");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { promisify } = require("util");
+const c = require("config");
 
 const jwtConfig = config.get("jwt");
 jwt.sign = promisify(jwt.sign);
+jwt.verify = promisify(jwt.verify);
 
 const hashPassword = async (input) => {
   if (!input) {
@@ -36,8 +38,20 @@ const generateJWT = async (id) => {
   return token;
 };
 
+const verifyJWT = async (token) => {
+  if (!token) {
+    throw new Error("Invalid token provided");
+  }
+  const verifiedToken = await jwt.verify(token, jwtConfig.secret);
+  if (!verifiedToken) {
+    throw new Error("Error decoding JWT token");
+  }
+  return verifiedToken.id;
+};
+
 module.exports = {
   hashPassword,
   comparePassword,
-  generateJWT
+  generateJWT,
+  verifyJWT
 };

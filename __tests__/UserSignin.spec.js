@@ -1,10 +1,10 @@
 const supertest = require("supertest");
 const mongoose = require("mongoose");
 const config = require("config");
-const jwt = require("jsonwebtoken");
 const app = require("../src/app");
 const User = require("../src/models/User");
 const { hashPassword, generateJWT } = require("../src/utils/generators");
+const { isAuthenticated } = require("../src/middleware/auth");
 
 const request = supertest(app);
 const dbConfig = config.get("database");
@@ -18,7 +18,7 @@ beforeAll(async () => {
   await mongoose.connect(dbConfig.url);
 });
 
-describe("User signin", () => {
+describe("User signin - JWT Strategy", () => {
   it("should return 200 OK when user signs in with valid request", async () => {
     const hash = await hashPassword(validUser.password);
     await User.create({ ...validUser, password: hash });
@@ -120,6 +120,95 @@ describe("User signin", () => {
 
   it("returns message `Invalid id provided to generated JWT` when no id is provided", async () => {
     await expect(generateJWT()).rejects.toThrow("Invalid ID provided");
+  });
+});
+
+describe("User isAuthenticated middleware", () => {
+  // Unit testing isAuthenticated middleware
+  it("calls next and returns isAuthenticated as true when req.user is valid", async () => {
+    const hash = await hashPassword(validUser.password);
+    const createdUser = await User.create({ ...validUser, password: hash });
+
+    const user = await User.findById(createdUser.id).select("-password");
+    const req = { user };
+    const next = jest.fn();
+
+    await isAuthenticated(req, {}, next);
+    expect(next).toHaveBeenCalled();
+    expect(req.isAuthenticated).toBeTruthy();
+  });
+
+  it("calls next, returns isAuthenticated as true and req.user when bearer token is valid", async () => {
+    const hash = await hashPassword(validUser.password);
+    const createdUser = await User.create({ ...validUser, password: hash });
+
+    const user = await User.findById(createdUser.id).select("-password");
+    const jwtToken = await generateJWT(user.id);
+    const token = `Bearer ${jwtToken}`;
+
+    const req = { headers: { authorization: token } };
+    const next = jest.fn();
+
+    await isAuthenticated(req, {}, next);
+    expect(next).toHaveBeenCalled();
+    expect(req.isAuthenticated).toBeTruthy();
+    expect(req.user).toMatchObject(user);
+  });
+
+  // Integration testing isAuthenticated middleware
+  it("returns 200 when user with Bearer token tries to get user", async () => {
+    const hash = await hashPassword(validUser.password);
+    const user = await User.create({ ...validUser, password: hash });
+
+    const jwtToken = await generateJWT(user.id);
+    const token = `Bearer ${jwtToken}`;
+
+    const response = await request
+      .get("/api/1.0/auth/get-user")
+      .set("authorization", token);
+    expect(response.status).toBe(200);
+  });
+
+  it("returns fields _id, email, role, active and __v when user with Bearer token tries to get user", async () => {
+    const hash = await hashPassword(validUser.password);
+    const user = await User.create({ ...validUser, password: hash });
+
+    const jwtToken = await generateJWT(user.id);
+
+    const token = `Bearer ${jwtToken}`;
+    const response = await request
+      .get("/api/1.0/auth/get-user")
+      .set("authorization", token);
+    expect(Object.keys(response.body.user)).toEqual([
+      "_id",
+      "email",
+      "role",
+      "active",
+      "__v"
+    ]);
+  });
+
+  it("returns 401 when unauthenticated user tries to get user", async () => {
+    const response = await request.get("/api/1.0/auth/get-user");
+    expect(response.status).toBe(401);
+  });
+
+  it("returns path, timestamp, when unauthenticated user tries to get user", async () => {
+    const preRequestTimestamp = new Date().getTime();
+    const response = await request.get("/api/1.0/auth/get-user");
+
+    expect(Object.keys(response.body)).toEqual([
+      "path",
+      "timestamp",
+      "message",
+      "validationErrors"
+    ]);
+
+    expect(response.body.path).toBe("/api/1.0/auth/get-user");
+    expect(response.body.message).toBe(
+      "You are unauthorized to access this route"
+    );
+    expect(response.body.timestamp).toBeGreaterThan(preRequestTimestamp);
   });
 });
 

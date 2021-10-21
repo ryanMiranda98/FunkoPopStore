@@ -3,10 +3,16 @@ const { validationResult } = require("express-validator");
 const User = require("../models/User");
 const InvalidLogin = require("../errors/InvalidLogin");
 const ValidationError = require("../errors/ValidationError");
+const UserNotFound = require("../errors/UserNotFound");
+const UnauthorizedAccess = require("../errors/UnauthorizedAccess");
 const JwtError = require("../errors/JwtError");
-const { comparePassword, generateJWT } = require("../utils/generators");
+const {
+  comparePassword,
+  generateJWT,
+  verifyJWT
+} = require("../utils/generators");
 
-module.exports = async (req, res, next) => {
+const signinMiddleware = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -33,4 +39,32 @@ module.exports = async (req, res, next) => {
   } catch (error) {
     next(new JwtError(error.message));
   }
+};
+
+const isAuthenticated = async (req, res, next) => {
+  if (req.user) {
+    req.isAuthenticated = true;
+    return next();
+  }
+
+  if (req.headers["authorization"]) {
+    const token = req.headers["authorization"].split("Bearer ")[1];
+    const id = await verifyJWT(token);
+
+    const user = await User.findById(id).select("-password");
+    if (!user) {
+      return next(new UserNotFound());
+    }
+    
+    req.user = user;
+    req.isAuthenticated = true;
+    return next();
+  }
+
+  return next(new UnauthorizedAccess());
+};
+
+module.exports = {
+  signinMiddleware,
+  isAuthenticated
 };

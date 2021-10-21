@@ -38,7 +38,13 @@ const signin = async (req, res, next) => {
   });
 };
 
+const getUser = async (req, res, next) => {
+  const { user } = req;
+  return res.status(200).json({ user });
+};
+
 module.exports = {
   signup,
-  signin
+  signin,
+  getUser
 };
