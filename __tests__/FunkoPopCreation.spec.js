@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const config = require("config");
 const app = require("../src/app");
 const FunkoPops = require("../src/models/FunkPop");
+const User = require("../src/models/User");
+const { hashPassword, generateJWT } = require("../src/utils/generators");
 
 const request = supertest(app);
 const dbConfig = config.get("database");
@@ -18,18 +20,58 @@ const funkoPopItem = {
   quantity: "100"
 };
 
+const validUser = {
+  email: "johndoe@test.com",
+  password: "test1234"
+};
+
+const createAdmin = async () => {
+  const hash = await hashPassword(validUser.password);
+  return User.create({
+    ...validUser,
+    password: hash,
+    role: "admin"
+  });
+};
+
+const createUser = async () => {
+  const hash = await hashPassword(validUser.password);
+  return User.create({
+    ...validUser,
+    password: hash,
+    role: "user"
+  });
+};
+
+const createFunkoPopRequest = async (body, options = {}) => {
+  const agent = request.post("/api/1.0/funkopops");
+  if (options.token) {
+    agent.set("authorization", options.token);
+  }
+
+  return agent.send(body);
+};
+
 describe("Create funko pops", () => {
-  it("should return 201 when funko pop is created", async () => {
-    const response = await request
-      .post("/api/1.0/funkopops")
-      .send(funkoPopItem);
+  it("should return 201 when funko pop is created when role is admin", async () => {
+    const admin = await createAdmin();
+    const jwtToken = await generateJWT(admin.id);
+    const token = `Bearer ${jwtToken}`;
+
+    const response = await createFunkoPopRequest(funkoPopItem, {
+      token: token
+    });
     expect(response.status).toBe(201);
   });
 
-  it("should return fields title, price, description, quantity, instock, _id and __v when creating funkopop with valid body", async () => {
-    const response = await request
-      .post("/api/1.0/funkopops")
-      .send(funkoPopItem);
+  it("should return fields title, price, description, quantity, instock, _id and __v when creating funkopop with valid body and role is admin", async () => {
+    const admin = await createAdmin();
+    const jwtToken = await generateJWT(admin.id);
+    const token = `Bearer ${jwtToken}`;
+
+    const response = await createFunkoPopRequest(funkoPopItem, {
+      token: token
+    });
     expect(Object.keys(response.body.funkopop)).toEqual([
       "title",
       "price",
@@ -41,14 +83,22 @@ describe("Create funko pops", () => {
     ]);
   });
 
-  it("should return 400 when funko pop is being created and body is not valid", async () => {
-    const response = await request.post("/api/1.0/funkopops").send();
+  it("should return 400 when funko pop is being created and body is not valid and role is admin", async () => {
+    const admin = await createAdmin();
+    const jwtToken = await generateJWT(admin.id);
+    const token = `Bearer ${jwtToken}`;
+
+    const response = await createFunkoPopRequest(null, { token: token });
     expect(response.status).toBe(400);
   });
 
-  it("should return path, timestamp, message and validationErrors field when funkopop is being created and body is not valid", async () => {
+  it("should return path, timestamp, message and validationErrors field when funkopop is being created and body is not valid and role is admin", async () => {
+    const admin = await createAdmin();
+    const jwtToken = await generateJWT(admin.id);
+    const token = `Bearer ${jwtToken}`;
+
     const preRequestTimestamp = new Date().getTime();
-    const response = await request.post("/api/1.0/funkopops").send();
+    const response = await createFunkoPopRequest(null, { token: token });
     expect(Object.keys(response.body)).toEqual([
       "path",
       "timestamp",
@@ -59,6 +109,39 @@ describe("Create funko pops", () => {
     expect(response.body.path).toBe("/api/1.0/funkopops");
     expect(response.body.message).toBe("Validation Failure");
     expect(response.body.timestamp).toBeGreaterThan(preRequestTimestamp);
+  });
+
+  it("should return 403 when funko pop is being created and body is valid and role is user", async () => {
+    const user = await createUser();
+    const jwtToken = await generateJWT(user.id);
+    const token = `Bearer ${jwtToken}`;
+
+    const response = await createFunkoPopRequest(funkoPopItem, {
+      token: token
+    });
+    expect(response.status).toBe(403);
+  });
+
+  it("should return path, timestamp and message field when funkopop is being created and body is not valid and role is user", async () => {
+    const user = await createUser();
+    const jwtToken = await generateJWT(user.id);
+    const token = `Bearer ${jwtToken}`;
+
+    const preRequestTimestamp = new Date().getTime();
+    const response = await createFunkoPopRequest(null, { token: token });
+    expect(Object.keys(response.body)).toEqual([
+      "path",
+      "timestamp",
+      "message",
+      "validationErrors"
+    ]);
+
+    expect(response.body.path).toBe("/api/1.0/funkopops");
+    expect(response.body.message).toBe(
+      "You are forbidden to access this route"
+    );
+    expect(response.body.timestamp).toBeGreaterThan(preRequestTimestamp);
+    expect(Object.keys(response.body.validationErrors).length).toBe(0);
   });
 
   it.each`
@@ -75,14 +158,18 @@ describe("Create funko pops", () => {
     ${"quantity"}    | ${null}            | ${`Cannot create funko pop without quantity!`}
     ${"quantity"}    | ${"asb4"}          | ${`Quantity has to be numeric`}
   `(
-    "returns $message when creating funko pop with $value as value in field $field",
+    "returns $message when creating funko pop with $value as value in field $field when role is admin",
     async ({ field, value, message }) => {
       const invalidBody = { ...funkoPopItem };
       invalidBody[field] = value;
 
-      const response = await request
-        .post("/api/1.0/funkopops")
-        .send(invalidBody);
+      const admin = await createAdmin();
+      const jwtToken = await generateJWT(admin.id);
+      const token = `Bearer ${jwtToken}`;
+
+      const response = await createFunkoPopRequest(invalidBody, {
+        token: token
+      });
       expect(response.body.validationErrors[field]).toBe(message);
     }
   );
@@ -90,6 +177,7 @@ describe("Create funko pops", () => {
 
 afterEach(async () => {
   await FunkoPops.deleteMany();
+  await User.deleteMany();
 });
 
 afterAll(async () => {

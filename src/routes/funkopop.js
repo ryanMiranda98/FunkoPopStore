@@ -1,6 +1,7 @@
 const express = require("express");
 const { check } = require("express-validator");
 const funkoPopController = require("../controllers/funkopop");
+const { isAuthenticated, isAllowed } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -9,6 +10,8 @@ router.get("/:id", funkoPopController.getFunkoPopById);
 
 router.post(
   "/",
+  isAuthenticated,
+  isAllowed("admin"),
   check("title")
     .notEmpty()
     .withMessage("Cannot create funko pop without title!")
@@ -44,6 +47,8 @@ router.post(
 
 router.patch(
   "/:id",
+  isAuthenticated,
+  isAllowed("admin"),
   check("title")
     .if(check("title").exists())
     .notEmpty()
@@ -80,6 +85,11 @@ router.patch(
     .bail(),
   funkoPopController.editFunkoPop
 );
-router.delete("/:id", funkoPopController.deleteFunkoPop);
+router.delete(
+  "/:id",
+  isAuthenticated,
+  isAllowed("admin"),
+  funkoPopController.deleteFunkoPop
+);
 
 module.exports = router;

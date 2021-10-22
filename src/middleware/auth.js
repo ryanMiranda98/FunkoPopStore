@@ -5,6 +5,7 @@ const InvalidLogin = require("../errors/InvalidLogin");
 const ValidationError = require("../errors/ValidationError");
 const UserNotFound = require("../errors/UserNotFound");
 const UnauthorizedAccess = require("../errors/UnauthorizedAccess");
+const ForbiddenAccess = require("../errors/ForbiddenAccess");
 const JwtError = require("../errors/JwtError");
 const {
   comparePassword,
@@ -55,7 +56,7 @@ const isAuthenticated = async (req, res, next) => {
     if (!user) {
       return next(new UserNotFound());
     }
-    
+
     req.user = user;
     req.isAuthenticated = true;
     return next();
@@ -64,7 +65,18 @@ const isAuthenticated = async (req, res, next) => {
   return next(new UnauthorizedAccess());
 };
 
+const isAllowed =
+  (roles = []) =>
+  (req, res, next) => {
+    if (roles.includes(req.user.role)) {
+      return next();
+    }
+
+    return next(new ForbiddenAccess());
+  };
+
 module.exports = {
   signinMiddleware,
-  isAuthenticated
+  isAuthenticated,
+  isAllowed
 };
