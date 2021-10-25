@@ -6,7 +6,8 @@
   "scripts": {
     "prod": "cross-env NODE_ENV=production npm index",
     "dev": "cross-env NODE_ENV=development nodemon index",
-    "test": "cross-env NODE_ENV=test jest --watch --verbose",
+    "test": "cross-env NODE_ENV=test jest --watch --verbose --runInBand",
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage --runInBand",
     "upload-data-dev": "cross-env NODE_ENV=development node uploadToDevDB"
   },
   "author": "Ryan Miranda",

@@ -40,7 +40,7 @@ describe("Funko pops listing", () => {
     expect(response.body.size).toBe(0);
   });
 
-  it("should return fields id, name, price, quantity, description, instock when funko pops are present in DB", async () => {
+  it("should return fields id, name, price, quantity, description, instock, reviews when funko pops are present in DB", async () => {
     await addPopsToDB(5);
     const response = await request.get("/api/1.0/funkopops");
     expect(Object.keys(response.body.funkopops[0])).toEqual([
@@ -49,7 +49,8 @@ describe("Funko pops listing", () => {
       "price",
       "description",
       "quantity",
-      "instock"
+      "instock",
+      "reviews"
     ]);
   });
 
@@ -68,7 +69,7 @@ describe("Funko pops listing", () => {
     expect(response.status).toBe(200);
   });
 
-  it("should return fields id, name, price, quantity, description, instock for single funkopop", async () => {
+  it("should return fields id, name, price, quantity, description, instock, reviews for single funkopop", async () => {
     await addPopsToDB(5);
     const pops = await getAllPops();
 
@@ -80,7 +81,8 @@ describe("Funko pops listing", () => {
       "price",
       "description",
       "quantity",
-      "instock"
+      "instock",
+      "reviews"
     ]);
   });
 
@@ -106,7 +108,7 @@ describe("Funko pops listing", () => {
     const popID = "61503ae7f4a6bb9a218";
     const response = await request.get(`/api/1.0/funkopops/${popID}`);
     expect(response.body.message).toBe(
-      "Sorry! Could not find any funko pops with that ID"
+      "Sorry! You have provided an invalid resource ID"
     );
   });
 });

@@ -1,5 +1,7 @@
 const express = require("express");
 const { check } = require("express-validator");
+
+const reviewRouter = require("./review");
 const funkoPopController = require("../controllers/funkopop");
 const { isAuthenticated, isAllowed } = require("../middleware/auth");
 
@@ -91,5 +93,7 @@ router.delete(
   isAllowed("admin"),
   funkoPopController.deleteFunkoPop
 );
+
+router.use("/:id/reviews", reviewRouter);
 
 module.exports = router;

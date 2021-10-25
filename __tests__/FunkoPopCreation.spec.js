@@ -64,7 +64,7 @@ describe("Create funko pops", () => {
     expect(response.status).toBe(201);
   });
 
-  it("should return fields title, price, description, quantity, instock, _id and __v when creating funkopop with valid body and role is admin", async () => {
+  it("should return fields title, price, description, quantity, instock, reviews, _id and __v when creating funkopop with valid body and role is admin", async () => {
     const admin = await createAdmin();
     const jwtToken = await generateJWT(admin.id);
     const token = `Bearer ${jwtToken}`;
@@ -78,6 +78,7 @@ describe("Create funko pops", () => {
       "description",
       "quantity",
       "instock",
+      "reviews",
       "_id",
       "__v"
     ]);

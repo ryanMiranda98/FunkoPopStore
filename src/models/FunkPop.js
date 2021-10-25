@@ -20,6 +20,7 @@ const FunkoPopSchema = new mongoose.Schema({
   instock: { type: Boolean, default: true, required: true },
   // coverImage: { type: String }
   // images: [{ type: String }]
+  reviews: [{ type: mongoose.SchemaTypes.ObjectId, ref: "Reviews" }]
 });
 
 module.exports = mongoose.model("FunkoPops", FunkoPopSchema);

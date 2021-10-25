@@ -105,7 +105,7 @@ describe("Funko Pop Delete", () => {
     expect(response.body.deletedFunkoPop).toBeTruthy();
   });
 
-  it("should return fields id, title, price, description, quantity, instock for deleted funko pop product in response bodycwhen role is admin", async () => {
+  it("should return fields id, title, price, description, quantity, instock, reviews for deleted funko pop product in response bodycwhen role is admin", async () => {
     const funkopop = await FunkoPops.create(funkoPopItem);
     const popID = funkopop.id;
 
@@ -120,7 +120,8 @@ describe("Funko Pop Delete", () => {
       "price",
       "description",
       "quantity",
-      "instock"
+      "instock",
+      "reviews"
     ]);
   });
 

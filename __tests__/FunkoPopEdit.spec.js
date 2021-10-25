@@ -111,7 +111,7 @@ describe("Funko Pop Edit", () => {
     );
   });
 
-  it("returns fields _id, title, price, description, quantity, instock of updated funko pop product when valid request body is sent and role is admin", async () => {
+  it("returns fields _id, title, price, description, quantity, instock, reviews of updated funko pop product when valid request body is sent and role is admin", async () => {
     const funkopop = await FunkoPops.create(funkoPopItem);
     const popID = funkopop.id;
 
@@ -129,7 +129,8 @@ describe("Funko Pop Edit", () => {
       "price",
       "description",
       "quantity",
-      "instock"
+      "instock",
+      "reviews"
     ]);
   });
 

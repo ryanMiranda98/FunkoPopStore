@@ -10,7 +10,7 @@ module.exports = (err, req, res, next) => {
 
   if (err.name === "CastError") {
     status = 404;
-    message = "Sorry! Could not find any funko pops with that ID";
+    message = "Sorry! You have provided an invalid resource ID";
   }
 
   return res.status(status).json({
